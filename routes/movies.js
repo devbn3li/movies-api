@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const Movie = require("../models/Movie");
 const protect = require("../middleware/authMiddleware");
+const admin = require("../middleware/adminMiddleware");
+
 
 // Get all movies
 router.get("/", async (req, res) => {
@@ -10,7 +12,7 @@ router.get("/", async (req, res) => {
 });
 
 // Create new movie
-router.post("/", protect, async (req, res) => {
+router.post("/", protect, admin, async (req, res) => {
   const { title, description, type, language, genre, releaseDate } = req.body;
 
   try {
@@ -54,7 +56,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update a movie
-router.put("/:id", protect, async (req, res) => {
+router.put("/:id", protect, admin, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);
 
@@ -75,7 +77,7 @@ router.put("/:id", protect, async (req, res) => {
 });
 
 // Delete a movie
-router.delete("/:id", protect, async (req, res) => {
+router.delete("/:id", protect, admin, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);
 

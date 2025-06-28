@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
         ref: "Movie",
       },
     ],
+    isAdmin: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   { timestamps: true }
 );
