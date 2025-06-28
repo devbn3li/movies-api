@@ -21,7 +21,10 @@ const reviewSchema = new mongoose.Schema(
 const movieSchema = new mongoose.Schema({
   title: { type: String, required: true, unique: true },
   description: String,
-  posterUrl: String,
+  posterUrl: {
+    type: String,
+    default: "/uploads/image-1751130928155.jpg",
+  },
   releaseDate: Date,
   genre: [String],
   type: {
