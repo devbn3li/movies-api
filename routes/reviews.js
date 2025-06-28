@@ -3,7 +3,6 @@ const router = express.Router();
 const Movie = require("../models/Movie");
 const protect = require("../middleware/authMiddleware");
 
-// ✅ إضافة تقييم
 router.post("/:movieId", protect, async (req, res) => {
   const { comment, rating } = req.body;
 
@@ -28,8 +27,7 @@ router.post("/:movieId", protect, async (req, res) => {
 
     movie.reviews.push(review);
 
-    // ✅ هنا المشكلة: انت نسيت السطر ده
-    calculateAverageRating(movie); // لازم يتحسب بعد الإضافة
+    calculateAverageRating(movie);
 
     await movie.save();
 
@@ -41,7 +39,6 @@ router.post("/:movieId", protect, async (req, res) => {
 });
 
 
-// ✅ الحصول على كل تقييمات فيلم
 router.get("/:movieId", async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.movieId).populate("reviews.user", "name");

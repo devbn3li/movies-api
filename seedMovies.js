@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const Movie = require("./models/Movie"); // تأكد إن المسار صح
+const Movie = require("./models/Movie");
 
 dotenv.config();
 

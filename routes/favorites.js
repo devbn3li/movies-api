@@ -4,7 +4,7 @@ const User = require("../models/User");
 const Movie = require("../models/Movie");
 const protect = require("../middleware/authMiddleware");
 
-// ✅ Add to favorites
+// Add to favorites
 router.post("/:movieId", protect, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.movieId);
@@ -26,7 +26,7 @@ router.post("/:movieId", protect, async (req, res) => {
   }
 });
 
-// ✅ Get my favorites
+// Get my favorites
 router.get("/", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate("favorites");
@@ -36,7 +36,7 @@ router.get("/", protect, async (req, res) => {
   }
 });
 
-// ✅ Remove from favorites
+// Remove from favorites
 router.delete("/:movieId", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

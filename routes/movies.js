@@ -3,13 +3,13 @@ const router = express.Router();
 const Movie = require("../models/Movie");
 const protect = require("../middleware/authMiddleware");
 
-// @desc   Get all movies
+// Get all movies
 router.get("/", async (req, res) => {
   const movies = await Movie.find();
   res.json(movies);
 });
 
-// @desc   Create new movie
+// Create new movie
 router.post("/", protect, async (req, res) => {
   const { title, description, type, language, genre, releaseDate } = req.body;
 
@@ -38,7 +38,7 @@ router.post("/", protect, async (req, res) => {
 });
 
 
-// @desc   Get movie by ID
+// Get movie by ID
 router.get("/:id", async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);
@@ -53,14 +53,13 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// @desc   Update a movie
+// Update a movie
 router.put("/:id", protect, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);
 
     if (!movie) return res.status(404).json({ message: "Movie not found" });
 
-    // فقط المالك يقدر يعدل
     if (movie.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized" });
     }
@@ -75,7 +74,7 @@ router.put("/:id", protect, async (req, res) => {
   }
 });
 
-// @desc   Delete a movie
+// Delete a movie
 router.delete("/:id", protect, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id);

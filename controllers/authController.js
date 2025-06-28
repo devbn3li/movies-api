@@ -6,7 +6,7 @@ const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
-// تسجيل حساب جديد
+
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -33,7 +33,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-// تسجيل دخول
+
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
