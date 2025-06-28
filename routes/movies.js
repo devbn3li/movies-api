@@ -11,20 +11,32 @@ router.get("/", async (req, res) => {
 
 // @desc   Create new movie
 router.post("/", protect, async (req, res) => {
-  const { title, description, posterUrl, releaseDate, genre } = req.body;
+  const { title, description, type, language, genre, releaseDate } = req.body;
 
-  const movie = new Movie({
-    title,
-    description,
-    posterUrl,
-    releaseDate,
-    genre,
-    createdBy: req.user._id,
-  });
+  try {
+    const existing = await Movie.findOne({ title });
+    if (existing) {
+      return res.status(400).json({ message: "Movie with this title already exists" });
+    }
 
-  const createdMovie = await movie.save();
-  res.status(201).json(createdMovie);
+    const movie = new Movie({
+      title,
+      description,
+      type,
+      language,
+      genre,
+      releaseDate,
+      createdBy: req.user._id,
+    });
+
+    await movie.save();
+    res.status(201).json(movie);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
+
 
 // @desc   Get movie by ID
 router.get("/:id", async (req, res) => {
