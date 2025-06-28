@@ -7,9 +7,40 @@ const admin = require("../middleware/adminMiddleware");
 
 // Get all movies
 router.get("/", async (req, res) => {
-  const movies = await Movie.find();
-  res.json(movies);
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = {};
+
+    if (req.query.type) {
+      query.type = req.query.type;
+    }
+
+    if (req.query.language) {
+      query.language = req.query.language;
+    }
+
+    if (req.query.genre) {
+      query.genre = { $in: [req.query.genre] };
+    }
+
+    const total = await Movie.countDocuments(query);
+    const movies = await Movie.find(query).skip(skip).limit(limit);
+
+    res.json({
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalMovies: total,
+      movies,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
+
 
 // Create new movie
 router.post("/", protect, admin, async (req, res) => {

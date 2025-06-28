@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
+    profilePicture: {
+      type: String,
+      default: "https://imgur.com/gallery/default-profile-image-JAvXY#jNNT4LE",
+    },
   },
   { timestamps: true }
 );
