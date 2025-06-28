@@ -35,8 +35,16 @@ const movieSchema = new mongoose.Schema({
   },
   language: {
     type: String,
-    enum: ["Arabic", "English", "French", "Japanese", "Other"],
+    enum: ["Arabic", "English", "French", "Japanese", "Spanish", "Korean", "Other"],
     default: "English",
+  },
+  length: {
+    type: Number,
+    default: 0,
+  },
+  cast: {
+    type: [String],
+    default: [],
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

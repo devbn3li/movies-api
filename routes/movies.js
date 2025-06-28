@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
 
 // Create new movie
 router.post("/", protect, admin, async (req, res) => {
-  const { title, description, type, language, genre, releaseDate } = req.body;
+  const { title, description, type, language, genre, releaseDate, cast, length } = req.body;
 
   try {
     const existing = await Movie.findOne({ title });
@@ -56,7 +56,9 @@ router.post("/", protect, admin, async (req, res) => {
       title,
       description,
       type,
+      cast,
       language,
+      length,
       genre,
       releaseDate,
       createdBy: req.user._id,
@@ -89,6 +91,7 @@ router.get("/:id", async (req, res) => {
 // Update a movie
 router.put("/:id", protect, admin, async (req, res) => {
   try {
+    console.log("Updating movie:", req.body);
     const movie = await Movie.findById(req.params.id);
 
     if (!movie) return res.status(404).json({ message: "Movie not found" });
