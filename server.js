@@ -1,8 +1,11 @@
-const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const authRoutes = require("./routes/auth");
+const express = require("express");
+const userRoutes = require("./routes/user");
+const movieRoutes = require("./routes/movies");
+const favoriteRoutes = require("./routes/favorites");
 
 
 dotenv.config();
@@ -21,6 +24,13 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/user", userRoutes);
+
+app.use("/api/movies", movieRoutes);
+
+app.use("/api/favorites", favoriteRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Movie",
+      },
+    ],
   },
   { timestamps: true }
 );
