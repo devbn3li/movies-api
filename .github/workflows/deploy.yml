@@ -1,0 +1,25 @@
+name: Deploy Backend to VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 74.234.195.22
+          username: azureuser
+          key: ${{ secrets.VMSECRET }}
+          script: |
+            cd /home/azureuser/movies-api
+            git pull
+            npm install
+            pm2 delete movies-api || true
+            pm2 start npm --name "movies-api" -- run start
+            pm2 save
