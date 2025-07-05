@@ -32,7 +32,6 @@ const userSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
-      default: "https://imgur.com/gallery/default-profile-image-JAvXY#jNNT4LE",
     },
   },
   { timestamps: true }

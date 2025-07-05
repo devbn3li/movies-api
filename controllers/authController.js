@@ -29,7 +29,7 @@ const registerUser = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         country: newUser.country,
-        avatar: newUser.avatar || "/Images/default.png",
+        profilePicture: newUser.profilePicture,
         isAdmin: newUser.isAdmin,
       },
     });
@@ -56,7 +56,8 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         country: user.country,
-        avatar: user.avatar || "/Images/default.png",
+        profilePicture: user.profilePicture,
+        favorites: user.favorites,
         isAdmin: user.isAdmin,
       },
     });

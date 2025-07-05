@@ -20,7 +20,7 @@ router.put("/profile", protect, async (req, res) => {
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     user.country = req.body.country || user.country;
-    user.avatar = req.body.avatar || user.avatar;
+    user.profilePicture = req.body.profilePicture || user.profilePicture;
 
     if (req.body.password) {
       const salt = await bcrypt.genSalt(10);
@@ -34,7 +34,7 @@ router.put("/profile", protect, async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       country: updatedUser.country,
-      avatar: updatedUser.avatar,
+      profilePicture: updatedUser.profilePicture,
       isAdmin: updatedUser.isAdmin,
     });
   } catch (err) {
