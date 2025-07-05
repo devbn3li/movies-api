@@ -8,7 +8,7 @@ const generateToken = (userId) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, country, profilePicture, isAdmin } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists)
@@ -20,6 +20,9 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      country,
+      profilePicture,
+      isAdmin,
     });
 
     res.status(201).json({
