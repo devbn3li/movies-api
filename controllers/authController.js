@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -54,15 +55,7 @@ const loginUser = async (req, res) => {
 
     res.json({
       token: generateToken(user._id),
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        country: user.country,
-        profilePicture: user.profilePicture,
-        favorites: user.favorites,
-        isAdmin: user.isAdmin,
-      },
+      user: req.user,
     });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
