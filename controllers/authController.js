@@ -58,7 +58,7 @@ const loginUser = async (req, res) => {
       user: userWithoutPassword,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: "Server Error: ", error: err.message });
   }
 };
 
