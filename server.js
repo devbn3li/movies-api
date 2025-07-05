@@ -10,12 +10,13 @@ const reviewRoutes = require("./routes/reviews");
 const path = require("path");
 const uploadRoutes = require("./routes/upload");
 const adminRoutes = require("./routes/admin");
-
+const morgan = require("morgan");
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
+app.use(morgan("dev"));
 app.use(express.json());
 
 mongoose
