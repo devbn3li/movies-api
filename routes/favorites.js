@@ -8,18 +8,21 @@ const protect = require("../middleware/authMiddleware");
 router.post("/:movieId", protect, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.movieId);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
+    if (!movie)
+      return res.status(404).json({ message: "Movie/Series not found" });
 
     const user = await User.findById(req.user._id);
 
     if (user.favorites.includes(movie._id)) {
-      return res.status(400).json({ message: "Movie already in favorites" });
+      return res
+        .status(400)
+        .json({ message: "Movie/Series already in favorites" });
     }
 
     user.favorites.push(movie._id);
     await user.save();
 
-    res.json({ message: "Movie added to favorites" });
+    res.json({ message: "Movie/Series added to favorites" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -46,7 +49,7 @@ router.delete("/:movieId", protect, async (req, res) => {
     );
 
     await user.save();
-    res.json({ message: "Movie removed from favorites" });
+    res.json({ message: "Movie/Series removed from favorites" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }

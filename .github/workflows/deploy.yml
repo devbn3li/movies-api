@@ -17,6 +17,7 @@ jobs:
           username: azureuser
           key: ${{ secrets.VMSECRET }}
           script: |
+            set -e
             cd /home/azureuser/movies-api
             git pull
             npm install

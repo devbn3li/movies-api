@@ -9,14 +9,15 @@ router.post("/:movieId", protect, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.movieId);
 
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
+    if (!movie)
+      return res.status(404).json({ message: "Movie/Series not found" });
 
     const alreadyReviewed = movie.reviews.find(
       (r) => r.user.toString() === req.user._id.toString()
     );
 
     if (alreadyReviewed) {
-      return res.status(400).json({ message: "Movie already reviewed" });
+      return res.status(400).json({ message: "Movie/Series already reviewed" });
     }
 
     const review = {
@@ -38,12 +39,15 @@ router.post("/:movieId", protect, async (req, res) => {
   }
 });
 
-
 router.get("/:movieId", async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.movieId).populate("reviews.user", "name");
+    const movie = await Movie.findById(req.params.movieId).populate(
+      "reviews.user",
+      "name"
+    );
 
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
+    if (!movie)
+      return res.status(404).json({ message: "Movie/Series not found" });
 
     res.json(movie.reviews);
   } catch (err) {
@@ -51,13 +55,13 @@ router.get("/:movieId", async (req, res) => {
   }
 });
 
-
 router.put("/:movieId", protect, async (req, res) => {
   const { comment, rating } = req.body;
 
   try {
     const movie = await Movie.findById(req.params.movieId);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
+    if (!movie)
+      return res.status(404).json({ message: "Movie/Series not found" });
 
     const review = movie.reviews.find(
       (r) => r.user.toString() === req.user._id.toString()
@@ -83,7 +87,8 @@ router.put("/:movieId", protect, async (req, res) => {
 router.delete("/:movieId", protect, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.movieId);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
+    if (!movie)
+      return res.status(404).json({ message: "Movie/Series not found" });
 
     const reviewIndex = movie.reviews.findIndex(
       (r) => r.user.toString() === req.user._id.toString()
