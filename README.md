@@ -18,6 +18,7 @@ A RESTful API server built with Node.js for managing movies and series data. The
 ## New Schema Structure
 
 ### Common Fields (Movies & Series)
+
 ```json
 {
   "adult": boolean,
@@ -36,6 +37,7 @@ A RESTful API server built with Node.js for managing movies and series data. The
 ```
 
 ### Movie-Specific Fields
+
 ```json
 {
   "original_title": string,
@@ -45,6 +47,7 @@ A RESTful API server built with Node.js for managing movies and series data. The
 ```
 
 ### Series-Specific Fields
+
 ```json
 {
   "origin_country": [string],
@@ -57,6 +60,7 @@ A RESTful API server built with Node.js for managing movies and series data. The
 ## API Endpoints
 
 ### Movies/Series
+
 - `GET /api/movies` - Get all movies/series with pagination and filters
 - `POST /api/movies` - Create new movie/series (Admin only)
 - `GET /api/movies/:id` - Get movie/series by MongoDB ID
@@ -67,6 +71,7 @@ A RESTful API server built with Node.js for managing movies and series data. The
 - `GET /api/movies/popular/list` - Get popular movies/series
 
 ### Query Parameters for GET /api/movies
+
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 10)
 - `type` - Filter by type: 'movie' or 'series'
@@ -77,29 +82,35 @@ A RESTful API server built with Node.js for managing movies and series data. The
 - `search` - Search in title, name, overview
 
 ### Authentication
+
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 
 ### Reviews
+
 - `POST /api/reviews/:movieId` - Add review
 - `GET /api/reviews/:movieId` - Get reviews for movie/series
 - `PUT /api/reviews/:movieId` - Update review
 - `DELETE /api/reviews/:movieId` - Delete review
 
 ### Favorites
+
 - `POST /api/favorites/:movieId` - Add to favorites
 - `GET /api/favorites` - Get user favorites
 - `DELETE /api/favorites/:movieId` - Remove from favorites
 
 ### Admin
+
 - `GET /api/admin/stats` - Get system statistics
 - `POST /api/admin/migrate` - Migrate old data to new schema
 
 ### User Profile
+
 - `GET /api/user/profile` - Get user profile
 - `PUT /api/user/profile` - Update user profile
 
 ### File Upload
+
 - `POST /api/upload` - Upload image file
 
 ## Prerequisites
@@ -137,16 +148,19 @@ JWT_SECRET=your_super_secret_key_here
 ## Running the Server
 
 Development mode:
+
 ```bash
 npm run dev
 ```
 
 Production mode:
+
 ```bash
 npm start
 ```
 
 Test the schema:
+
 ```bash
 node test-schema.js
 ```
@@ -163,6 +177,7 @@ Authorization: Bearer <admin_token>
 ```
 
 This will:
+
 - Add missing required fields with default values
 - Map old field names to new field names
 - Preserve existing data while making it compatible with the new schema
@@ -170,6 +185,7 @@ This will:
 ## Usage Examples
 
 ### Creating a Movie
+
 ```bash
 POST /api/movies
 Content-Type: application/json
@@ -195,6 +211,7 @@ Authorization: Bearer <admin_token>
 ```
 
 ### Creating a Series
+
 ```bash
 POST /api/movies
 Content-Type: application/json
@@ -224,6 +241,7 @@ Authorization: Bearer <admin_token>
 All API responses follow a consistent format:
 
 ### Success Response
+
 ```json
 {
   "data": {...},
@@ -232,6 +250,7 @@ All API responses follow a consistent format:
 ```
 
 ### Error Response
+
 ```json
 {
   "message": "Error message",
@@ -240,6 +259,7 @@ All API responses follow a consistent format:
 ```
 
 ### Paginated Response
+
 ```json
 {
   "page": 1,
