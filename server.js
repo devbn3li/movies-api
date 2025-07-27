@@ -5,6 +5,9 @@ const authRoutes = require("./routes/auth");
 const express = require("express");
 const userRoutes = require("./routes/user");
 const movieRoutes = require("./routes/movies");
+const moviesOnlyRoutes = require("./routes/movies-only");
+const tvShowsOnlyRoutes = require("./routes/tvshows-only");
+const tvShowsRoutes = require("./routes/tvshows");
 const favoriteRoutes = require("./routes/favorites");
 const reviewRoutes = require("./routes/reviews");
 const path = require("path");
@@ -33,6 +36,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 
 app.use("/api/movies", movieRoutes);
+
+app.use("/api/movies-only", moviesOnlyRoutes);
+
+app.use("/api/tvshows-only", tvShowsOnlyRoutes);
+
+app.use("/api/tvshows", tvShowsRoutes);
 
 app.use("/api/favorites", favoriteRoutes);
 

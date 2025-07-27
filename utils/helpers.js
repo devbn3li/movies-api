@@ -106,11 +106,80 @@ const getDisplayDate = (item) => {
 };
 
 /**
- * Format movie/series data for API response
+ * Format movie data for API response
+ * @param {Object} item - Movie object
+ * @returns {Object} - Formatted data
+ */
+const formatMovieResponse = (item) => {
+  return {
+    _id: item._id,
+    id: item.id,
+    type: "movie",
+    title: item.title || item.original_title,
+    overview: item.overview,
+    poster_url: item.poster_url,
+    backdrop_url: item.backdrop_url,
+    genre_names: item.genre_names,
+    vote_average: item.vote_average,
+    vote_count: item.vote_count,
+    popularity: item.popularity,
+    adult: item.adult,
+    original_language: item.original_language,
+    original_title: item.original_title,
+    release_date: item.release_date,
+    video: item.video,
+    averageRating: item.averageRating || 0,
+    reviews: item.reviews || [],
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
+};
+
+/**
+ * Format TV show data for API response
+ * @param {Object} item - TV show object
+ * @returns {Object} - Formatted data
+ */
+const formatTVShowResponse = (item) => {
+  return {
+    _id: item._id,
+    id: item.id,
+    type: "series",
+    title: item.name || item.original_name,
+    overview: item.overview,
+    poster_url: item.poster_url,
+    backdrop_url: item.backdrop_url,
+    genre_names: item.genre_names,
+    vote_average: item.vote_average,
+    vote_count: item.vote_count,
+    popularity: item.popularity,
+    adult: item.adult,
+    original_language: item.original_language,
+    original_name: item.original_name,
+    name: item.name,
+    first_air_date: item.first_air_date,
+    origin_country: item.origin_country,
+    averageRating: item.averageRating || 0,
+    reviews: item.reviews || [],
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
+};
+
+/**
+ * Format movie/series data for API response (legacy function)
  * @param {Object} item - Movie or series object
  * @returns {Object} - Formatted data
  */
 const formatApiResponse = (item) => {
+  // Check if it's a movie (has title) or TV show (has name)
+  if (item.title || item.original_title) {
+    return formatMovieResponse(item);
+  } else if (item.name || item.original_name) {
+    return formatTVShowResponse(item);
+  }
+  
+  // Fallback for old format
   const formatted = {
     _id: item._id,
     id: item.id,
@@ -149,4 +218,6 @@ module.exports = {
   getDisplayTitle,
   getDisplayDate,
   formatApiResponse,
+  formatMovieResponse,
+  formatTVShowResponse,
 };
