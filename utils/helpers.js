@@ -130,6 +130,7 @@ const formatMovieResponse = (item) => {
     video: item.video,
     averageRating: item.averageRating || 0,
     reviews: item.reviews || [],
+    createdBy: item.createdBy,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
@@ -161,6 +162,7 @@ const formatTVShowResponse = (item) => {
     origin_country: item.origin_country,
     averageRating: item.averageRating || 0,
     reviews: item.reviews || [],
+    createdBy: item.createdBy,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
@@ -196,6 +198,7 @@ const formatApiResponse = (item) => {
     original_language: item.original_language,
     averageRating: item.averageRating,
     reviews: item.reviews,
+    createdBy: item.createdBy,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };

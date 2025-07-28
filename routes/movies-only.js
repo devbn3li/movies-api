@@ -152,6 +152,7 @@ router.get("/", async (req, res) => {
     const total = await MovieOnly.countDocuments(query);
     const adultMoviesCount = await MovieOnly.countDocuments({ ...query, adult: true });
     const movies = await MovieOnly.find(query)
+      .populate('createdBy', 'name email')
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -183,7 +184,7 @@ router.get("/", async (req, res) => {
 // Get movie by ID
 router.get("/:id", async (req, res) => {
   try {
-    const movie = await MovieOnly.findOne({ _id: req.params.id });
+    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
@@ -198,7 +199,7 @@ router.get("/:id", async (req, res) => {
 // Get movie by external ID
 router.get("/external/:id", async (req, res) => {
   try {
-    const movie = await MovieOnly.findOne({ id: req.params.id });
+    const movie = await MovieOnly.findOne({ id: req.params.id }).populate('createdBy', 'name email');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
@@ -253,17 +254,19 @@ router.post("/", protect, admin, async (req, res) => {
 // Update a movie
 router.put("/:id", protect, admin, async (req, res) => {
   try {
-    const movie = await MovieOnly.findOne({ _id: req.params.id });
+    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!movie) return res.status(404).json({ message: "Movie not found" });
 
-    if (movie.createdBy && movie.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Any admin can update any movie
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     // Filter out fields that shouldn't be updated directly
     const { _id, createdBy, createdAt, updatedAt, ...updatedFields } = req.body;
 
+    // Update the fields
     Object.assign(movie, updatedFields);
 
     const updatedMovie = await movie.save();
@@ -277,14 +280,15 @@ router.put("/:id", protect, admin, async (req, res) => {
 // Delete a movie
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
-    const movie = await MovieOnly.findOne({ _id: req.params.id });
+    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
     }
 
-    if (movie.createdBy && movie.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Any admin can delete any movie
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     await movie.deleteOne();

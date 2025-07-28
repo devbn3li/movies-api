@@ -79,6 +79,7 @@ router.get("/", async (req, res) => {
 
     const total = await Movie.countDocuments(query);
     const movies = await Movie.find(query)
+      .populate('createdBy', 'name email')
       .sort({ popularity: -1 })
       .skip(skip)
       .limit(limit);
@@ -150,7 +151,7 @@ router.post("/", protect, admin, async (req, res) => {
 // Get movie by ID
 router.get("/:id", async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id);
+    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
@@ -225,28 +226,34 @@ router.get("/popular/list", async (req, res) => {
 router.put("/:id", protect, admin, async (req, res) => {
   try {
     console.log("Updating movie:", req.body);
-    const movie = await Movie.findById(req.params.id);
+    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!movie) return res.status(404).json({ message: "Movie not found" });
 
-    if (movie.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Any admin can update any movie
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     // Filter out fields that shouldn't be updated directly
     const { _id, createdBy, createdAt, updatedAt, ...updatedFields } = req.body;
 
-    // Validate type-specific fields
+    // Validate type-specific fields if type is being changed
     if (updatedFields.type && updatedFields.type !== movie.type) {
-      return res
-        .status(400)
-        .json({ message: "Cannot change type of existing movie/series" });
+      const validation = validateMovieData(updatedFields, updatedFields.type);
+      if (!validation.isValid) {
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: validation.errors,
+        });
+      }
     }
 
+    // Update the fields
     Object.assign(movie, updatedFields);
 
     const updatedMovie = await movie.save();
-    res.json(updatedMovie);
+    res.json(formatApiResponse(updatedMovie));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -256,16 +263,16 @@ router.put("/:id", protect, admin, async (req, res) => {
 // Delete a movie
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id);
+    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!movie) {
       console.log("Movie not found");
       return res.status(404).json({ message: "Movie not found" });
     }
 
-    if (movie.createdBy.toString() !== req.user._id.toString()) {
-      console.log("Not authorized user");
-      return res.status(403).json({ message: "Not authorized" });
+    // Any admin can delete any movie
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     await movie.deleteOne();

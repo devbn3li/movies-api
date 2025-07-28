@@ -162,6 +162,7 @@ router.get("/", async (req, res) => {
     const total = await TVShow.countDocuments(query);
     const adultShowsCount = await TVShow.countDocuments({ ...query, adult: true });
     const tvShows = await TVShow.find(query)
+      .populate('createdBy', 'name email')
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -232,7 +233,7 @@ router.post("/", protect, admin, async (req, res) => {
 // Get TV show by ID
 router.get("/:id", async (req, res) => {
   try {
-    const tvShow = await TVShow.findOne({ _id: req.params.id });
+    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!tvShow) {
       return res.status(404).json({ message: "TV Show not found" });
@@ -247,7 +248,7 @@ router.get("/:id", async (req, res) => {
 // Get TV show by external ID
 router.get("/external/:id", async (req, res) => {
   try {
-    const tvShow = await TVShow.findOne({ id: req.params.id });
+    const tvShow = await TVShow.findOne({ id: req.params.id }).populate('createdBy', 'name email');
 
     if (!tvShow) {
       return res.status(404).json({ message: "TV Show not found" });
@@ -413,24 +414,23 @@ router.get("/airing/now", async (req, res) => {
 // Update a TV show
 router.put("/:id", protect, admin, async (req, res) => {
   try {
-    const tvShow = await Movie.findOne({ _id: req.params.id, type: "series" });
+    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!tvShow) return res.status(404).json({ message: "TV Show not found" });
 
-    if (tvShow.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Any admin can update any TV show
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     // Filter out fields that shouldn't be updated directly
-    const { _id, createdBy, createdAt, updatedAt, type, ...updatedFields } = req.body;
+    const { _id, createdBy, createdAt, updatedAt, ...updatedFields } = req.body;
 
-    // Ensure type remains as series
-    updatedFields.type = "series";
-
+    // Update the fields
     Object.assign(tvShow, updatedFields);
 
     const updatedTvShow = await tvShow.save();
-    res.json(formatApiResponse(updatedTvShow));
+    res.json(formatTVShowResponse(updatedTvShow));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -440,14 +440,15 @@ router.put("/:id", protect, admin, async (req, res) => {
 // Delete a TV show
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
-    const tvShow = await Movie.findOne({ _id: req.params.id, type: "series" });
+    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!tvShow) {
       return res.status(404).json({ message: "TV Show not found" });
     }
 
-    if (tvShow.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Any admin can delete any TV show
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     await tvShow.deleteOne();
