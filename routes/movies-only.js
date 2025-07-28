@@ -124,6 +124,7 @@ router.get("/", async (req, res) => {
     }
 
     const total = await MovieOnly.countDocuments(query);
+    const adultMoviesCount = await MovieOnly.countDocuments({ ...query, adult: true });
     const movies = await MovieOnly.find(query)
       .sort(sort)
       .skip(skip)
@@ -136,6 +137,7 @@ router.get("/", async (req, res) => {
       page,
       totalPages: Math.ceil(total / limit),
       totalMovies: total,
+      adultMovies: adultMoviesCount,
       filters: {
         applied: Object.keys(req.query).filter(key => !['page', 'limit'].includes(key)),
         available: [

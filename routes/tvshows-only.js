@@ -134,6 +134,7 @@ router.get("/", async (req, res) => {
     }
 
     const total = await TVShow.countDocuments(query);
+    const adultShowsCount = await TVShow.countDocuments({ ...query, adult: true });
     const tvShows = await TVShow.find(query)
       .sort(sort)
       .skip(skip)
@@ -146,6 +147,7 @@ router.get("/", async (req, res) => {
       page,
       totalPages: Math.ceil(total / limit),
       totalShows: total,
+      adultShows: adultShowsCount,
       filters: {
         applied: Object.keys(req.query).filter(key => !['page', 'limit'].includes(key)),
         available: [
