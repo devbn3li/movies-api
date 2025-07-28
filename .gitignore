@@ -1,3 +1,6 @@
 /node_modules
 package-lock.json
 .env
+ADD_UPDATE_GUIDE.md
+QUICK_REFERENCE.md
+examples.js
