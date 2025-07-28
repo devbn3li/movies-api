@@ -212,6 +212,36 @@ const formatApiResponse = (item) => {
   return formatted;
 };
 
+/**
+ * Filter content based on user settings
+ * @param {Array} content - Array of movies or TV shows
+ * @param {Object} userSettings - User settings object
+ * @returns {Array} - Filtered content
+ */
+const filterContentBySettings = (content, userSettings) => {
+  if (!userSettings || userSettings.showAdultContent === true) {
+    return content; // Return all content if adult content is allowed
+  }
+  
+  // Filter out adult content if user settings don't allow it
+  return content.filter(item => !item.adult);
+};
+
+/**
+ * Get content filter for database queries
+ * @param {Object} userSettings - User settings object
+ * @returns {Object} - MongoDB filter object
+ */
+const getContentFilter = (userSettings) => {
+  const filter = {};
+  
+  if (!userSettings || userSettings.showAdultContent !== true) {
+    filter.adult = { $ne: true }; // Exclude adult content
+  }
+  
+  return filter;
+};
+
 module.exports = {
   validateMovieData,
   transformExternalData,
@@ -220,4 +250,6 @@ module.exports = {
   formatApiResponse,
   formatMovieResponse,
   formatTVShowResponse,
+  filterContentBySettings,
+  getContentFilter,
 };

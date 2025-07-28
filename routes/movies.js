@@ -7,7 +7,9 @@ const {
   validateMovieData,
   transformExternalData,
   formatApiResponse,
+  getContentFilter,
 } = require("../utils/helpers");
+const User = require("../models/User");
 
 // Get all movies
 router.get("/", async (req, res) => {
@@ -17,6 +19,30 @@ router.get("/", async (req, res) => {
     const skip = (page - 1) * limit;
 
     const query = {};
+
+    // Apply user settings if user is authenticated
+    if (req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.split(" ")[1];
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        
+        if (user && user.settings) {
+          const contentFilter = getContentFilter(user.settings);
+          Object.assign(query, contentFilter);
+        } else {
+          // Default to no adult content if no settings
+          query.adult = { $ne: true };
+        }
+      } catch (tokenError) {
+        // Invalid token, apply default filter (no adult content)
+        query.adult = { $ne: true };
+      }
+    } else {
+      // No authentication, apply default filter (no adult content)
+      query.adult = { $ne: true };
+    }
 
     if (req.query.type) {
       query.type = req.query.type;
@@ -34,6 +60,7 @@ router.get("/", async (req, res) => {
       query.genre_names = { $in: [req.query.genre] };
     }
 
+    // Allow admin override for adult content filter
     if (req.query.adult !== undefined) {
       query.adult = req.query.adult === "true";
     }

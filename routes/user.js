@@ -22,6 +22,14 @@ router.put("/profile", protect, async (req, res) => {
     user.country = req.body.country || user.country;
     user.profilePicture = req.body.profilePicture || user.profilePicture;
 
+    // Update user settings
+    if (req.body.settings) {
+      user.settings = user.settings || {};
+      if (typeof req.body.settings.showAdultContent !== 'undefined') {
+        user.settings.showAdultContent = req.body.settings.showAdultContent;
+      }
+    }
+
     if (req.body.password) {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.password, salt);
@@ -36,6 +44,48 @@ router.put("/profile", protect, async (req, res) => {
       country: updatedUser.country,
       profilePicture: updatedUser.profilePicture,
       isAdmin: updatedUser.isAdmin,
+      settings: updatedUser.settings,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Route to update user settings
+router.put("/settings", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Initialize settings if not exists
+    user.settings = user.settings || {};
+
+    // Update showAdultContent setting
+    if (typeof req.body.showAdultContent !== 'undefined') {
+      user.settings.showAdultContent = req.body.showAdultContent;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      message: "Settings updated successfully",
+      settings: updatedUser.settings,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Route to get user settings
+router.get("/settings", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({
+      settings: user.settings || { showAdultContent: false },
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });

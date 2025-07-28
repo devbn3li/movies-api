@@ -33,6 +33,12 @@ const userSchema = new mongoose.Schema(
     profilePicture: {
       type: String,
     },
+    settings: {
+      showAdultContent: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   { timestamps: true }
 );

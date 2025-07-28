@@ -7,7 +7,9 @@ const {
   validateMovieData,
   transformExternalData,
   formatTVShowResponse,
+  getContentFilter,
 } = require("../utils/helpers");
+const User = require("../models/User");
 
 // Get all TV shows with advanced filtering
 router.get("/", async (req, res) => {
@@ -18,6 +20,30 @@ router.get("/", async (req, res) => {
 
     let query = {};
     let sort = { popularity: -1 }; // Default sort
+
+    // Apply user settings if user is authenticated
+    if (req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.split(" ")[1];
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        
+        if (user && user.settings) {
+          const contentFilter = getContentFilter(user.settings);
+          Object.assign(query, contentFilter);
+        } else {
+          // Default to no adult content if no settings
+          query.adult = { $ne: true };
+        }
+      } catch (tokenError) {
+        // Invalid token, apply default filter (no adult content)
+        query.adult = { $ne: true };
+      }
+    } else {
+      // No authentication, apply default filter (no adult content)
+      query.adult = { $ne: true };
+    }
 
     // Language filters
     if (req.query.language) {
@@ -33,7 +59,7 @@ router.get("/", async (req, res) => {
       query.genre_names = { $in: [req.query.genre] };
     }
 
-    // Adult content filter
+    // Adult content filter (admin override)
     if (req.query.adult !== undefined) {
       query.adult = req.query.adult === "true";
     }
