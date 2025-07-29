@@ -11,6 +11,14 @@ router.get("/", async (req, res) => {
       genres: [],
       languages: [],
       originalLanguages: [],
+      movies: {
+        years: [],
+        genres: []
+      },
+      tvShows: {
+        years: [],
+        genres: []
+      },
       ratings: {
         min: 0,
         max: 10,
@@ -106,6 +114,14 @@ router.get("/", async (req, res) => {
 
     filters.years = allYears.filter(year => year && year > 1900 && year <= new Date().getFullYear() + 5);
 
+    // Get years for movies only
+    const movieOnlyYears = movieYears.map(item => item._id).filter(year => year && year > 1900 && year <= new Date().getFullYear() + 5);
+    filters.movies.years = movieOnlyYears.sort((a, b) => b - a);
+
+    // Get years for TV shows only  
+    const tvOnlyYears = tvYears.map(item => item._id).filter(year => year && year > 1900 && year <= new Date().getFullYear() + 5);
+    filters.tvShows.years = tvOnlyYears.sort((a, b) => b - a);
+
     // Get genres from movies
     const movieGenres = await Movie.aggregate([
       {
@@ -162,6 +178,18 @@ router.get("/", async (req, res) => {
     filters.genres = Array.from(genreMap.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
+
+    // Get genres for movies only
+    filters.movies.genres = movieGenres.map(genre => ({
+      name: genre._id,
+      count: genre.count
+    })).sort((a, b) => b.count - a.count);
+
+    // Get genres for TV shows only
+    filters.tvShows.genres = tvGenres.map(genre => ({
+      name: genre._id,
+      count: genre.count
+    })).sort((a, b) => b.count - a.count);
 
     // Get languages
     const movieLanguages = await Movie.distinct("original_language");
@@ -333,6 +361,196 @@ router.get("/", async (req, res) => {
     res.status(500).json({ 
       success: false,
       message: "Error fetching available filters",
+      error: error.message 
+    });
+  }
+});
+
+// Get filters for movies only
+router.get("/movies", async (req, res) => {
+  try {
+    const filters = {
+      years: [],
+      genres: [],
+      contentType: 'movie'
+    };
+
+    // Get years from movies only
+    const movieYears = await Movie.aggregate([
+      {
+        $match: {
+          release_date: { $exists: true, $ne: null, $ne: "" }
+        }
+      },
+      {
+        $project: {
+          year: { 
+            $year: { 
+              $dateFromString: { 
+                dateString: "$release_date",
+                onError: null
+              } 
+            } 
+          }
+        }
+      },
+      {
+        $match: {
+          year: { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: "$year"
+        }
+      },
+      {
+        $sort: { _id: -1 }
+      }
+    ]);
+
+    filters.years = movieYears.map(item => item._id)
+      .filter(year => year && year > 1900 && year <= new Date().getFullYear() + 5);
+
+    // Get genres from movies only
+    const movieGenres = await Movie.aggregate([
+      {
+        $match: {
+          genre_names: { $exists: true, $ne: [] }
+        }
+      },
+      {
+        $unwind: "$genre_names"
+      },
+      {
+        $group: {
+          _id: "$genre_names",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      }
+    ]);
+
+    filters.genres = movieGenres.map(genre => ({
+      name: genre._id,
+      count: genre.count
+    }));
+
+    // Get movie count
+    const movieCount = await Movie.countDocuments();
+
+    res.json({
+      success: true,
+      filters,
+      meta: {
+        totalMovies: movieCount,
+        contentType: 'movie',
+        lastUpdated: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching movie filters:', error);
+    res.status(500).json({ 
+      success: false,
+      message: "Error fetching movie filters",
+      error: error.message 
+    });
+  }
+});
+
+// Get filters for TV shows only
+router.get("/tvshows", async (req, res) => {
+  try {
+    const filters = {
+      years: [],
+      genres: [],
+      contentType: 'tv'
+    };
+
+    // Get years from TV shows only
+    const tvYears = await TVShow.aggregate([
+      {
+        $match: {
+          first_air_date: { $exists: true, $ne: null, $ne: "" }
+        }
+      },
+      {
+        $project: {
+          year: { 
+            $year: { 
+              $dateFromString: { 
+                dateString: "$first_air_date",
+                onError: null
+              } 
+            } 
+          }
+        }
+      },
+      {
+        $match: {
+          year: { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: "$year"
+        }
+      },
+      {
+        $sort: { _id: -1 }
+      }
+    ]);
+
+    filters.years = tvYears.map(item => item._id)
+      .filter(year => year && year > 1900 && year <= new Date().getFullYear() + 5);
+
+    // Get genres from TV shows only
+    const tvGenres = await TVShow.aggregate([
+      {
+        $match: {
+          genre_names: { $exists: true, $ne: [] }
+        }
+      },
+      {
+        $unwind: "$genre_names"
+      },
+      {
+        $group: {
+          _id: "$genre_names",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      }
+    ]);
+
+    filters.genres = tvGenres.map(genre => ({
+      name: genre._id,
+      count: genre.count
+    }));
+
+    // Get TV show count
+    const tvCount = await TVShow.countDocuments();
+
+    res.json({
+      success: true,
+      filters,
+      meta: {
+        totalTVShows: tvCount,
+        contentType: 'tv',
+        lastUpdated: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching TV show filters:', error);
+    res.status(500).json({ 
+      success: false,
+      message: "Error fetching TV show filters",
       error: error.message 
     });
   }
