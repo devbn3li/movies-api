@@ -40,21 +40,21 @@ router.put("/profile", protect, async (req, res) => {
       // Validate username format
       const validation = validateUsername(req.body.username);
       if (!validation.isValid) {
-        return res.status(400).json({ 
-          message: "Invalid username", 
-          errors: validation.errors 
+        return res.status(400).json({
+          message: "Invalid username",
+          errors: validation.errors,
         });
       }
 
       // Check if username is already taken
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         username: req.body.username.toLowerCase(),
-        _id: { $ne: user._id }
+        _id: { $ne: user._id },
       });
-      
+
       if (existingUser) {
-        return res.status(400).json({ 
-          message: "Username is already taken" 
+        return res.status(400).json({
+          message: "Username is already taken",
         });
       }
 
@@ -69,7 +69,7 @@ router.put("/profile", protect, async (req, res) => {
     // Update user settings
     if (req.body.settings) {
       user.settings = user.settings || {};
-      if (typeof req.body.settings.showAdultContent !== 'undefined') {
+      if (typeof req.body.settings.showAdultContent !== "undefined") {
         user.settings.showAdultContent = req.body.settings.showAdultContent;
       }
     }
@@ -109,7 +109,7 @@ router.put("/settings", protect, async (req, res) => {
     user.settings = user.settings || {};
 
     // Update showAdultContent setting
-    if (typeof req.body.showAdultContent !== 'undefined') {
+    if (typeof req.body.showAdultContent !== "undefined") {
       user.settings.showAdultContent = req.body.showAdultContent;
     }
 
@@ -230,8 +230,8 @@ router.get("/search/:query", protect, async (req, res) => {
     const users = await User.find({
       $or: [
         { username: { $regex: query, $options: "i" } },
-        { name: { $regex: query, $options: "i" } }
-      ]
+        { name: { $regex: query, $options: "i" } },
+      ],
     })
       .select("name username profilePicture country followersCount")
       .limit(limit * 1)
@@ -241,8 +241,8 @@ router.get("/search/:query", protect, async (req, res) => {
     const total = await User.countDocuments({
       $or: [
         { username: { $regex: query, $options: "i" } },
-        { name: { $regex: query, $options: "i" } }
-      ]
+        { name: { $regex: query, $options: "i" } },
+      ],
     });
 
     res.json({
@@ -268,29 +268,29 @@ router.post("/check-username", protect, async (req, res) => {
     // Validate username format
     const validation = validateUsername(username);
     if (!validation.isValid) {
-      return res.status(400).json({ 
-        message: "Invalid username format", 
+      return res.status(400).json({
+        message: "Invalid username format",
         errors: validation.errors,
-        isAvailable: false
+        isAvailable: false,
       });
     }
 
     // Check if username is already taken
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       username: username.toLowerCase(),
-      _id: { $ne: req.user._id }
+      _id: { $ne: req.user._id },
     });
 
     if (existingUser) {
-      return res.json({ 
+      return res.json({
         message: "Username is already taken",
-        isAvailable: false
+        isAvailable: false,
       });
     }
 
     res.json({
       message: "Username is available",
-      isAvailable: true
+      isAvailable: true,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -307,7 +307,8 @@ router.delete("/profile/picture", protect, async (req, res) => {
     }
 
     // Reset to default profile picture
-    user.profilePicture = "https://i.ibb.co/5gsWWqYj/vecteezy-profile-default-icon-design-template-50018408.jpg";
+    user.profilePicture =
+      "https://i.ibb.co/5gsWWqYj/vecteezy-profile-default-icon-design-template-50018408.jpg";
     await user.save();
 
     res.json({

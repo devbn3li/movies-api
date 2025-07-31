@@ -41,7 +41,8 @@ const userSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
-      default: "https://i.ibb.co/5gsWWqYj/vecteezy-profile-default-icon-design-template-50018408.jpg",
+      default:
+        "https://i.ibb.co/5gsWWqYj/vecteezy-profile-default-icon-design-template-50018408.jpg",
     },
     settings: {
       showAdultContent: {
