@@ -297,4 +297,26 @@ router.post("/check-username", protect, async (req, res) => {
   }
 });
 
+// Delete profile picture
+router.delete("/profile/picture", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Reset to default profile picture
+    user.profilePicture = "https://i.ibb.co/5gsWWqYj/vecteezy-profile-default-icon-design-template-50018408.jpg";
+    await user.save();
+
+    res.json({
+      message: "Profile picture deleted successfully",
+      profilePicture: user.profilePicture,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 module.exports = router;
