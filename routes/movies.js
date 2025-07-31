@@ -155,11 +155,11 @@ router.get("/", async (req, res) => {
     // Fetch both movies and TV shows
     const [movies, tvShows] = await Promise.all([
       movieQuery._id === null ? [] : Movie.find(movieQuery)
-        .populate('createdBy', 'name email')
+        .populate('createdBy', 'name username profilePicture')
         .sort(sortOption)
         .limit(limit * 2), // Get more to ensure we have enough after combining
       tvQuery._id === null ? [] : TVShow.find(tvQuery)
-        .populate('createdBy', 'name email')
+        .populate('createdBy', 'name username profilePicture')
         .sort(sortOption)
         .limit(limit * 2)
     ]);
@@ -280,7 +280,7 @@ router.post("/", protect, admin, async (req, res) => {
 // Get movie by ID
 router.get("/:id", async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name email');
+    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
@@ -355,7 +355,7 @@ router.get("/popular/list", async (req, res) => {
 router.put("/:id", protect, admin, async (req, res) => {
   try {
     console.log("Updating movie:", req.body);
-    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name email');
+    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!movie) return res.status(404).json({ message: "Movie not found" });
 
@@ -392,7 +392,7 @@ router.put("/:id", protect, admin, async (req, res) => {
 // Delete a movie
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name email');
+    const movie = await Movie.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!movie) {
       console.log("Movie not found");

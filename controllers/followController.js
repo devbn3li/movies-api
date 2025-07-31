@@ -105,7 +105,7 @@ const getFollowers = async (req, res) => {
     const user = await User.findById(userId)
       .populate({
         path: "followers",
-        select: "name email profilePicture followersCount followingCount",
+        select: "name username profilePicture followersCount followingCount",
         options: {
           skip: skip,
           limit: limit,
@@ -143,7 +143,7 @@ const getFollowing = async (req, res) => {
     const user = await User.findById(userId)
       .populate({
         path: "following",
-        select: "name email profilePicture followersCount followingCount",
+        select: "name username profilePicture followersCount followingCount",
         options: {
           skip: skip,
           limit: limit,
@@ -218,7 +218,7 @@ const getSuggestedUsers = async (req, res) => {
         $nin: [...currentUser.following, currentUserId] 
       }
     })
-    .select("name email profilePicture followersCount followingCount")
+    .select("name username profilePicture followersCount followingCount")
     .sort({ followersCount: -1 }) // Sort by most followed users
     .limit(limit);
 

@@ -152,7 +152,7 @@ router.get("/", async (req, res) => {
     const total = await MovieOnly.countDocuments(query);
     const adultMoviesCount = await MovieOnly.countDocuments({ ...query, adult: true });
     const movies = await MovieOnly.find(query)
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name username profilePicture')
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -184,7 +184,7 @@ router.get("/", async (req, res) => {
 // Get movie by ID
 router.get("/:id", async (req, res) => {
   try {
-    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name email');
+    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
@@ -199,7 +199,7 @@ router.get("/:id", async (req, res) => {
 // Get movie by external ID
 router.get("/external/:id", async (req, res) => {
   try {
-    const movie = await MovieOnly.findOne({ id: req.params.id }).populate('createdBy', 'name email');
+    const movie = await MovieOnly.findOne({ id: req.params.id }).populate('createdBy', 'name username profilePicture');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
@@ -254,7 +254,7 @@ router.post("/", protect, admin, async (req, res) => {
 // Update a movie
 router.put("/:id", protect, admin, async (req, res) => {
   try {
-    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name email');
+    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!movie) return res.status(404).json({ message: "Movie not found" });
 
@@ -280,7 +280,7 @@ router.put("/:id", protect, admin, async (req, res) => {
 // Delete a movie
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
-    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name email');
+    const movie = await MovieOnly.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });

@@ -245,6 +245,78 @@ const getContentFilter = (userSettings) => {
   return filter;
 };
 
+/**
+ * Generate a username from a name
+ * @param {string} name - User's name
+ * @returns {string} - Generated username
+ */
+const generateUsername = (name) => {
+  // Remove special characters and convert to lowercase
+  let username = name
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .substring(0, 20); // Limit to 20 characters
+
+  return username;
+};
+
+/**
+ * Generate a unique username
+ * @param {string} name - User's name
+ * @param {Object} User - User model
+ * @returns {string} - Unique username
+ */
+const generateUniqueUsername = async (name, User) => {
+  const baseUsername = generateUsername(name);
+  let username = baseUsername;
+  let counter = 1;
+
+  // Check if username exists and increment counter if needed
+  while (await User.findOne({ username })) {
+    counter++;
+    username = `${baseUsername}${counter}`;
+  }
+
+  return username;
+};
+
+/**
+ * Validate username format
+ * @param {string} username - Username to validate
+ * @returns {Object} - Validation result
+ */
+const validateUsername = (username) => {
+  const errors = [];
+
+  if (!username) {
+    errors.push("Username is required");
+    return { isValid: false, errors };
+  }
+
+  if (username.length < 3) {
+    errors.push("Username must be at least 3 characters long");
+  }
+
+  if (username.length > 30) {
+    errors.push("Username must not exceed 30 characters");
+  }
+
+  // Check for valid characters (letters, numbers, underscores only)
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    errors.push("Username can only contain letters, numbers, and underscores");
+  }
+
+  // Check if starts with letter or number
+  if (!/^[a-zA-Z0-9]/.test(username)) {
+    errors.push("Username must start with a letter or number");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
 module.exports = {
   validateMovieData,
   transformExternalData,
@@ -255,4 +327,7 @@ module.exports = {
   formatTVShowResponse,
   filterContentBySettings,
   getContentFilter,
+  generateUsername,
+  generateUniqueUsername,
+  validateUsername,
 };

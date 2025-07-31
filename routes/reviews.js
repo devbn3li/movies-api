@@ -43,7 +43,7 @@ router.get("/:movieId", async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.movieId).populate(
       "reviews.user",
-      "name"
+      "name username profilePicture"
     );
 
     if (!movie)

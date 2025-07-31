@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { generateUniqueUsername } = require("../utils/helpers");
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -16,8 +17,12 @@ const registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate unique username from name
+    const username = await generateUniqueUsername(name, User);
+
     const newUser = await User.create({
       name,
+      username,
       email,
       password: hashedPassword,
       country,
@@ -30,6 +35,7 @@ const registerUser = async (req, res) => {
       user: {
         _id: newUser._id,
         name: newUser.name,
+        username: newUser.username,
         email: newUser.email,
         country: newUser.country,
         profilePicture: newUser.profilePicture,
@@ -49,9 +55,10 @@ const loginUser = async (req, res) => {
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    const { password: _, ...userWithoutPassword } = user.toObject();
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
+
+    const { password: _, ...userWithoutPassword } = user.toObject();
 
     res.json({
       token: generateToken(user._id),

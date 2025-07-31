@@ -3,13 +3,14 @@ const router = express.Router();
 const protect = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { validateUsername } = require("../utils/helpers");
 
 router.get("/profile", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
-      .populate("followers", "name email profilePicture")
-      .populate("following", "name email profilePicture");
+      .populate("followers", "name username profilePicture")
+      .populate("following", "name username profilePicture");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -34,6 +35,32 @@ router.put("/profile", protect, async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Handle username update
+    if (req.body.username && req.body.username !== user.username) {
+      // Validate username format
+      const validation = validateUsername(req.body.username);
+      if (!validation.isValid) {
+        return res.status(400).json({ 
+          message: "Invalid username", 
+          errors: validation.errors 
+        });
+      }
+
+      // Check if username is already taken
+      const existingUser = await User.findOne({ 
+        username: req.body.username.toLowerCase(),
+        _id: { $ne: user._id }
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: "Username is already taken" 
+        });
+      }
+
+      user.username = req.body.username.toLowerCase();
+    }
+
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     user.country = req.body.country || user.country;
@@ -57,6 +84,7 @@ router.put("/profile", protect, async (req, res) => {
     res.json({
       _id: updatedUser._id,
       name: updatedUser.name,
+      username: updatedUser.username,
       email: updatedUser.email,
       country: updatedUser.country,
       profilePicture: updatedUser.profilePicture,
@@ -119,8 +147,8 @@ router.get("/:userId", protect, async (req, res) => {
 
     const user = await User.findById(userId)
       .select("-password -email")
-      .populate("followers", "name profilePicture")
-      .populate("following", "name profilePicture");
+      .populate("followers", "name username profilePicture")
+      .populate("following", "name username profilePicture");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -137,6 +165,7 @@ router.get("/:userId", protect, async (req, res) => {
       user: {
         _id: user._id,
         name: user.name,
+        username: user.username,
         profilePicture: user.profilePicture,
         country: user.country,
         followersCount: user.followersCount,
@@ -145,6 +174,123 @@ router.get("/:userId", protect, async (req, res) => {
         isFollowing,
         isOwnProfile,
       },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Get user profile by username
+router.get("/username/:username", protect, async (req, res) => {
+  try {
+    const { username } = req.params;
+    const currentUserId = req.user._id.toString();
+
+    const user = await User.findOne({ username: username.toLowerCase() })
+      .select("-password -email")
+      .populate("followers", "name username profilePicture")
+      .populate("following", "name username profilePicture");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if current user follows this user
+    const isFollowing = user.followers.some(
+      (follower) => follower._id.toString() === currentUserId
+    );
+
+    const isOwnProfile = user._id.toString() === currentUserId;
+
+    res.json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        profilePicture: user.profilePicture,
+        country: user.country,
+        followersCount: user.followersCount,
+        followingCount: user.followingCount,
+        createdAt: user.createdAt,
+        isFollowing,
+        isOwnProfile,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Search users by username
+router.get("/search/:query", protect, async (req, res) => {
+  try {
+    const { query } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const users = await User.find({
+      $or: [
+        { username: { $regex: query, $options: "i" } },
+        { name: { $regex: query, $options: "i" } }
+      ]
+    })
+      .select("name username profilePicture country followersCount")
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ followersCount: -1 });
+
+    const total = await User.countDocuments({
+      $or: [
+        { username: { $regex: query, $options: "i" } },
+        { name: { $regex: query, $options: "i" } }
+      ]
+    });
+
+    res.json({
+      users,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Check username availability
+router.post("/check-username", protect, async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    // Validate username format
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+      return res.status(400).json({ 
+        message: "Invalid username format", 
+        errors: validation.errors,
+        isAvailable: false
+      });
+    }
+
+    // Check if username is already taken
+    const existingUser = await User.findOne({ 
+      username: username.toLowerCase(),
+      _id: { $ne: req.user._id }
+    });
+
+    if (existingUser) {
+      return res.json({ 
+        message: "Username is already taken",
+        isAvailable: false
+      });
+    }
+
+    res.json({
+      message: "Username is available",
+      isAvailable: true
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

@@ -162,7 +162,7 @@ router.get("/", async (req, res) => {
     const total = await TVShow.countDocuments(query);
     const adultShowsCount = await TVShow.countDocuments({ ...query, adult: true });
     const tvShows = await TVShow.find(query)
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name username profilePicture')
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -233,7 +233,7 @@ router.post("/", protect, admin, async (req, res) => {
 // Get TV show by ID
 router.get("/:id", async (req, res) => {
   try {
-    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name email');
+    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!tvShow) {
       return res.status(404).json({ message: "TV Show not found" });
@@ -248,7 +248,7 @@ router.get("/:id", async (req, res) => {
 // Get TV show by external ID
 router.get("/external/:id", async (req, res) => {
   try {
-    const tvShow = await TVShow.findOne({ id: req.params.id }).populate('createdBy', 'name email');
+    const tvShow = await TVShow.findOne({ id: req.params.id }).populate('createdBy', 'name username profilePicture');
 
     if (!tvShow) {
       return res.status(404).json({ message: "TV Show not found" });
@@ -414,7 +414,7 @@ router.get("/airing/now", async (req, res) => {
 // Update a TV show
 router.put("/:id", protect, admin, async (req, res) => {
   try {
-    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name email');
+    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!tvShow) return res.status(404).json({ message: "TV Show not found" });
 
@@ -440,7 +440,7 @@ router.put("/:id", protect, admin, async (req, res) => {
 // Delete a TV show
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
-    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name email');
+    const tvShow = await TVShow.findById(req.params.id).populate('createdBy', 'name username profilePicture');
 
     if (!tvShow) {
       return res.status(404).json({ message: "TV Show not found" });
