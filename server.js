@@ -14,6 +14,7 @@ const path = require("path");
 const uploadRoutes = require("./routes/upload");
 const adminRoutes = require("./routes/admin");
 const filtersRoutes = require("./routes/filters");
+const followRoutes = require("./routes/follow");
 const morgan = require("morgan");
 
 dotenv.config();
@@ -55,6 +56,8 @@ app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 app.use("/api/admin", adminRoutes);
 
 app.use("/api/filters", filtersRoutes);
+
+app.use("/api/follow", followRoutes);
 
 
 const PORT = process.env.PORT || 5000;

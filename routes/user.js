@@ -4,11 +4,28 @@ const protect = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
-router.get("/profile", protect, (req, res) => {
-  res.json({
-    message: "Welcome to your profile",
-    user: req.user,
-  });
+router.get("/profile", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select("-password")
+      .populate("followers", "name email profilePicture")
+      .populate("following", "name email profilePicture");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: "Welcome to your profile",
+      user: {
+        ...user.toObject(),
+        followersCount: user.followersCount,
+        followingCount: user.followingCount,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
 router.put("/profile", protect, async (req, res) => {
@@ -45,6 +62,8 @@ router.put("/profile", protect, async (req, res) => {
       profilePicture: updatedUser.profilePicture,
       isAdmin: updatedUser.isAdmin,
       settings: updatedUser.settings,
+      followersCount: updatedUser.followersCount,
+      followingCount: updatedUser.followingCount,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -89,6 +108,46 @@ router.get("/settings", protect, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get public user profile
+router.get("/:userId", protect, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id.toString();
+
+    const user = await User.findById(userId)
+      .select("-password -email")
+      .populate("followers", "name profilePicture")
+      .populate("following", "name profilePicture");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if current user follows this user
+    const isFollowing = user.followers.some(
+      (follower) => follower._id.toString() === currentUserId
+    );
+
+    const isOwnProfile = userId === currentUserId;
+
+    res.json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        profilePicture: user.profilePicture,
+        country: user.country,
+        followersCount: user.followersCount,
+        followingCount: user.followingCount,
+        createdAt: user.createdAt,
+        isFollowing,
+        isOwnProfile,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
