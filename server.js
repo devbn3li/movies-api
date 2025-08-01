@@ -16,8 +16,15 @@ const adminRoutes = require("./routes/admin");
 const filtersRoutes = require("./routes/filters");
 const followRoutes = require("./routes/follow");
 const morgan = require("morgan");
+const fs = require("fs");
 
 dotenv.config();
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log("Created uploads directory");
+}
 
 const app = express();
 app.use(cors());
