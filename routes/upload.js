@@ -22,7 +22,7 @@ router.post("/", protect, upload.single("image"), (req, res) => {
 
 router.get("/check/:filename", (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, "..", "uploads", filename);
+  const filePath = path.join(__dirname, "..", "public", "uploads", filename);
   
   if (fs.existsSync(filePath)) {
     res.json({ 

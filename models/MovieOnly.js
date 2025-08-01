@@ -115,7 +115,7 @@ const movieOnlySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: 'movies' // تحديد اسم الكولكشن
+    collection: 'movies' // specify collection name
   }
 );
 

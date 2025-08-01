@@ -20,10 +20,15 @@ const fs = require("fs");
 
 dotenv.config();
 
-const uploadsDir = path.join(__dirname, "uploads");
+const publicDir = path.join(__dirname, "public");
+const uploadsDir = path.join(publicDir, "uploads");
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+  console.log("Created public directory");
+}
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log("Created uploads directory");
+  console.log("Created public/uploads directory");
 }
 
 const app = express();
@@ -58,7 +63,7 @@ app.use("/api/reviews", reviewRoutes);
 
 app.use("/api/upload", uploadRoutes);
 
-app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api/admin", adminRoutes);
 

@@ -111,7 +111,7 @@ const tvShowSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: 'tvshows' // تحديد اسم الكولكشن
+    collection: 'tvshows' // specify collection name
   }
 );
 

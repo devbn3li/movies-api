@@ -1,0 +1,2 @@
+# This file ensures the public/uploads directory is tracked by Git
+# The directory is required for storing uploaded images
