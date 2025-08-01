@@ -10,7 +10,10 @@ router.post("/", protect, upload.single("image"), (req, res) => {
     return res.status(400).json({ message: "No file uploaded" });
   }
   
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // Force HTTPS for production domain
+  const host = req.get('host');
+  const protocol = host.includes('moviezone.me') ? 'https' : req.protocol;
+  const baseUrl = `${protocol}://${host}`;
   const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
   
   res.json({ 
@@ -25,11 +28,15 @@ router.get("/check/:filename", (req, res) => {
   const filePath = path.join(__dirname, "..", "public", "uploads", filename);
   
   if (fs.existsSync(filePath)) {
+    // Force HTTPS for production domain
+    const host = req.get('host');
+    const protocol = host.includes('moviezone.me') ? 'https' : req.protocol;
+    
     res.json({ 
       exists: true, 
       filename,
       url: `/uploads/${filename}`,
-      fullUrl: `${req.protocol}://${req.get('host')}/uploads/${filename}`
+      fullUrl: `${protocol}://${host}/uploads/${filename}`
     });
   } else {
     res.status(404).json({ 

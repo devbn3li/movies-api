@@ -333,7 +333,10 @@ const getFullImageUrl = (imagePath, req) => {
   
   // If it's a relative path starting with /uploads, convert to full URL
   if (imagePath.startsWith('/uploads/')) {
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const host = req.get('host');
+    // Force HTTPS for production domain
+    const protocol = host.includes('moviezone.me') ? 'https' : req.protocol;
+    const baseUrl = `${protocol}://${host}`;
     return `${baseUrl}${imagePath}`;
   }
   
