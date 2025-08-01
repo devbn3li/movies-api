@@ -317,6 +317,53 @@ const validateUsername = (username) => {
   };
 };
 
+/**
+ * Convert relative image paths to full URLs
+ * @param {string} imagePath - The image path (relative or full URL)
+ * @param {Object} req - Express request object
+ * @returns {string} - Full URL or original path if already full
+ */
+const getFullImageUrl = (imagePath, req) => {
+  if (!imagePath) return imagePath;
+  
+  // If it's already a full URL (starts with http/https), return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // If it's a relative path starting with /uploads, convert to full URL
+  if (imagePath.startsWith('/uploads/')) {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    return `${baseUrl}${imagePath}`;
+  }
+  
+  return imagePath;
+};
+
+/**
+ * Transform user object to include full image URLs
+ * @param {Object} user - User object
+ * @param {Object} req - Express request object
+ * @returns {Object} - User object with full image URLs
+ */
+const transformUserWithFullUrls = (user, req) => {
+  const userObj = user.toObject ? user.toObject() : user;
+  
+  return {
+    ...userObj,
+    profilePicture: getFullImageUrl(userObj.profilePicture, req),
+    // Transform followers and following arrays if they exist
+    followers: userObj.followers?.map(follower => ({
+      ...follower,
+      profilePicture: getFullImageUrl(follower.profilePicture, req)
+    })),
+    following: userObj.following?.map(following => ({
+      ...following,
+      profilePicture: getFullImageUrl(following.profilePicture, req)
+    }))
+  };
+};
+
 module.exports = {
   validateMovieData,
   transformExternalData,
@@ -330,4 +377,6 @@ module.exports = {
   generateUsername,
   generateUniqueUsername,
   validateUsername,
+  getFullImageUrl,
+  transformUserWithFullUrls,
 };

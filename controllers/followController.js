@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { transformUserWithFullUrls } = require("../utils/helpers");
 
 // Follow a user
 const followUser = async (req, res) => {
@@ -116,11 +117,16 @@ const getFollowers = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Transform followers to include full image URLs
+    const followersWithFullUrls = user.followers.map(follower => 
+      transformUserWithFullUrls(follower, req)
+    );
+
     const totalFollowers = user.followersCount;
     const totalPages = Math.ceil(totalFollowers / limit);
 
     res.status(200).json({
-      followers: user.followers,
+      followers: followersWithFullUrls,
       totalFollowers,
       currentPage: page,
       totalPages,
@@ -154,11 +160,16 @@ const getFollowing = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Transform following to include full image URLs
+    const followingWithFullUrls = user.following.map(following => 
+      transformUserWithFullUrls(following, req)
+    );
+
     const totalFollowing = user.followingCount;
     const totalPages = Math.ceil(totalFollowing / limit);
 
     res.status(200).json({
-      following: user.following,
+      following: followingWithFullUrls,
       totalFollowing,
       currentPage: page,
       totalPages,
@@ -222,9 +233,14 @@ const getSuggestedUsers = async (req, res) => {
     .sort({ followersCount: -1 }) // Sort by most followed users
     .limit(limit);
 
+    // Transform suggested users to include full image URLs
+    const suggestedUsersWithFullUrls = suggestedUsers.map(user => 
+      transformUserWithFullUrls(user, req)
+    );
+
     res.status(200).json({
-      suggestedUsers,
-      count: suggestedUsers.length,
+      suggestedUsers: suggestedUsersWithFullUrls,
+      count: suggestedUsersWithFullUrls.length,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

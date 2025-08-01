@@ -3,7 +3,7 @@ const router = express.Router();
 const protect = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const { validateUsername } = require("../utils/helpers");
+const { validateUsername, transformUserWithFullUrls } = require("../utils/helpers");
 
 router.get("/profile", protect, async (req, res) => {
   try {
@@ -16,10 +16,13 @@ router.get("/profile", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Transform user object to include full image URLs
+    const userWithFullUrls = transformUserWithFullUrls(user, req);
+
     res.json({
       message: "Welcome to your profile",
       user: {
-        ...user.toObject(),
+        ...userWithFullUrls,
         followersCount: user.followersCount,
         followingCount: user.followingCount,
       },
@@ -81,17 +84,20 @@ router.put("/profile", protect, async (req, res) => {
 
     const updatedUser = await user.save();
 
+    // Transform user object to include full image URLs
+    const userWithFullUrls = transformUserWithFullUrls(updatedUser, req);
+
     res.json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      username: updatedUser.username,
-      email: updatedUser.email,
-      country: updatedUser.country,
-      profilePicture: updatedUser.profilePicture,
-      isAdmin: updatedUser.isAdmin,
-      settings: updatedUser.settings,
-      followersCount: updatedUser.followersCount,
-      followingCount: updatedUser.followingCount,
+      _id: userWithFullUrls._id,
+      name: userWithFullUrls.name,
+      username: userWithFullUrls.username,
+      email: userWithFullUrls.email,
+      country: userWithFullUrls.country,
+      profilePicture: userWithFullUrls.profilePicture,
+      isAdmin: userWithFullUrls.isAdmin,
+      settings: userWithFullUrls.settings,
+      followersCount: userWithFullUrls.followersCount,
+      followingCount: userWithFullUrls.followingCount,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
