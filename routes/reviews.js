@@ -66,11 +66,23 @@ router.get("/:movieId", async (req, res) => {
     if (!media)
       return res.status(404).json({ message: "Movie/Series not found" });
 
-    // Populate the user data for reviews
-    await media.populate("reviews.user", "name username profilePicture");
+    // Find the media again with populated reviews to ensure populate works correctly
+    let populatedMedia;
+    if (type === "movie") {
+      populatedMedia = await Movie.findById(req.params.movieId).populate(
+        "reviews.user",
+        "name username profilePicture"
+      );
+    } else {
+      populatedMedia = await TVShow.findById(req.params.movieId).populate(
+        "reviews.user",
+        "name username profilePicture"
+      );
+    }
 
-    res.json(media.reviews);
+    res.json(populatedMedia.reviews);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
