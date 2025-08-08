@@ -1,18 +1,38 @@
 const express = require("express");
 const router = express.Router();
 const Movie = require("../models/Movie");
+const TVShow = require("../models/TVShow");
 const protect = require("../middleware/authMiddleware");
+
+// Helper function to find either movie or TV show by ID
+const findMediaById = async (id) => {
+  try {
+    let media = await Movie.findById(id);
+    if (media) {
+      return { media, type: "movie" };
+    }
+
+    media = await TVShow.findById(id);
+    if (media) {
+      return { media, type: "tvshow" };
+    }
+
+    return { media: null, type: null };
+  } catch (err) {
+    return { media: null, type: null };
+  }
+};
 
 router.post("/:movieId", protect, async (req, res) => {
   const { comment, rating } = req.body;
 
   try {
-    const movie = await Movie.findById(req.params.movieId);
+    const { media, type } = await findMediaById(req.params.movieId);
 
-    if (!movie)
+    if (!media)
       return res.status(404).json({ message: "Movie/Series not found" });
 
-    const alreadyReviewed = movie.reviews.find(
+    const alreadyReviewed = media.reviews.find(
       (r) => r.user.toString() === req.user._id.toString()
     );
 
@@ -26,11 +46,11 @@ router.post("/:movieId", protect, async (req, res) => {
       rating: Number(rating),
     };
 
-    movie.reviews.push(review);
+    media.reviews.push(review);
 
-    calculateAverageRating(movie);
+    calculateAverageRating(media);
 
-    await movie.save();
+    await media.save();
 
     res.status(201).json({ message: "Review added" });
   } catch (err) {
@@ -41,15 +61,15 @@ router.post("/:movieId", protect, async (req, res) => {
 
 router.get("/:movieId", async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.movieId).populate(
-      "reviews.user",
-      "name username profilePicture"
-    );
+    const { media, type } = await findMediaById(req.params.movieId);
 
-    if (!movie)
+    if (!media)
       return res.status(404).json({ message: "Movie/Series not found" });
 
-    res.json(movie.reviews);
+    // Populate the user data for reviews
+    await media.populate("reviews.user", "name username profilePicture");
+
+    res.json(media.reviews);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
@@ -59,11 +79,12 @@ router.put("/:movieId", protect, async (req, res) => {
   const { comment, rating } = req.body;
 
   try {
-    const movie = await Movie.findById(req.params.movieId);
-    if (!movie)
+    const { media, type } = await findMediaById(req.params.movieId);
+
+    if (!media)
       return res.status(404).json({ message: "Movie/Series not found" });
 
-    const review = movie.reviews.find(
+    const review = media.reviews.find(
       (r) => r.user.toString() === req.user._id.toString()
     );
 
@@ -74,8 +95,8 @@ router.put("/:movieId", protect, async (req, res) => {
     review.comment = comment || review.comment;
     review.rating = rating || review.rating;
 
-    calculateAverageRating(movie);
-    await movie.save();
+    calculateAverageRating(media);
+    await media.save();
 
     res.json({ message: "Review updated" });
   } catch (err) {
@@ -86,11 +107,12 @@ router.put("/:movieId", protect, async (req, res) => {
 
 router.delete("/:movieId", protect, async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.movieId);
-    if (!movie)
+    const { media, type } = await findMediaById(req.params.movieId);
+
+    if (!media)
       return res.status(404).json({ message: "Movie/Series not found" });
 
-    const reviewIndex = movie.reviews.findIndex(
+    const reviewIndex = media.reviews.findIndex(
       (r) => r.user.toString() === req.user._id.toString()
     );
 
@@ -98,10 +120,10 @@ router.delete("/:movieId", protect, async (req, res) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    movie.reviews.splice(reviewIndex, 1);
+    media.reviews.splice(reviewIndex, 1);
 
-    calculateAverageRating(movie);
-    await movie.save();
+    calculateAverageRating(media);
+    await media.save();
 
     res.json({ message: "Review removed" });
   } catch (err) {
@@ -109,9 +131,9 @@ router.delete("/:movieId", protect, async (req, res) => {
   }
 });
 
-const calculateAverageRating = (movie) => {
-  const total = movie.reviews.reduce((acc, review) => acc + review.rating, 0);
-  movie.averageRating = movie.reviews.length ? total / movie.reviews.length : 0;
+const calculateAverageRating = (media) => {
+  const total = media.reviews.reduce((acc, review) => acc + review.rating, 0);
+  media.averageRating = media.reviews.length ? total / media.reviews.length : 0;
 };
 
 module.exports = router;
