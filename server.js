@@ -71,6 +71,39 @@ app.use("/api/filters", filtersRoutes);
 
 app.use("/api/follow", followRoutes);
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+
+  // Handle Mongoose CastError (Invalid ObjectId)
+  if (err.name === "CastError") {
+    return res.status(400).json({
+      message: "Invalid ID format",
+      error: "CAST_ERROR",
+      path: err.path,
+      value: err.value,
+    });
+  }
+
+  // Handle Mongoose ValidationError
+  if (err.name === "ValidationError") {
+    const errors = Object.values(err.errors).map((e) => e.message);
+    return res.status(400).json({
+      message: "Validation Error",
+      error: "VALIDATION_ERROR",
+      details: errors,
+    });
+  }
+
+  // Default error response
+  res.status(500).json({
+    message: "Internal Server Error",
+    error:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
