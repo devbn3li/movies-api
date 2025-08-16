@@ -2,6 +2,11 @@ const nodemailer = require("nodemailer");
 
 // Create email transporter
 const createTransporter = () => {
+  // Check if email credentials are provided
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    throw new Error('Email credentials not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.');
+  }
+
   return nodemailer.createTransporter({
     service: "gmail", // You can change this based on your email provider
     auth: {
@@ -57,6 +62,16 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
+    
+    // Log specific error details for debugging
+    if (error.code === 'EAUTH') {
+      console.error('Authentication failed. Check EMAIL_USER and EMAIL_PASSWORD.');
+    } else if (error.code === 'ECONNECTION') {
+      console.error('Connection failed. Check internet connection.');
+    } else if (error.code === 'EMESSAGE') {
+      console.error('Message error. Check email format and content.');
+    }
+    
     return false;
   }
 };
