@@ -36,7 +36,7 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
             <h2 style="color: #333; text-align: center; margin-bottom: 30px;">Hello ${name}!</h2>
             
             <p style="color: #666; font-size: 16px; line-height: 1.6; text-align: center;">
-              Thank you for registering with Movies API. To complete your account registration, please use the following verification code:
+              Welcome to Moviezone. To complete your account registration, please use the following verification code:
             </p>
             
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
