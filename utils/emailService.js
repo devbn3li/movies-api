@@ -7,11 +7,11 @@ const createTransporter = () => {
     throw new Error('Email credentials not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.');
   }
 
-  return nodemailer.createTransporter({
-    service: "gmail", // You can change this based on your email provider
+  return nodemailer.createTransport({
+    service: "gmail",
     auth: {
-      user: process.env.EMAIL_USER, // Your email
-      pass: process.env.EMAIL_PASSWORD, // Your app password
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
     },
   });
 };
