@@ -52,6 +52,7 @@ const sendVerificationEmail = async (email, name, verificationCode) => {
             <p style="color: #999; font-size: 12px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
               If you did not request this verification, please ignore this email.
             </p>
+            <a href="https://moviezone.me" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Visit Moviezone</a>
           </div>
         </div>
       `,
