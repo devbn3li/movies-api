@@ -176,8 +176,9 @@ router.get("/", async (req, res) => {
       movies: formattedMovies,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Movies-only route error:", err);
+    console.error("Stack trace:", err.stack);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
