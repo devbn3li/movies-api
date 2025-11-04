@@ -17,6 +17,7 @@ const filtersRoutes = require("./routes/filters");
 const followRoutes = require("./routes/follow");
 const morgan = require("morgan");
 const fs = require("fs");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 
@@ -32,6 +33,44 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const app = express();
+
+// Rate Limiting - Protection against DoS attacks
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Maximum 100 requests per IP
+  message: {
+    error: "Too many requests from this IP, please try again later.",
+    message:
+      "You have exceeded the maximum number of requests. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Strict rate limiter for endpoints that fetch large amounts of data
+const strictLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 20, // Maximum 20 requests per IP
+  message: {
+    error: "Too many requests, please slow down.",
+    message: "Too many requests. Please reduce the frequency of your requests.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for Authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Maximum 10 attempts
+  message: {
+    error: "Too many authentication attempts, please try again later.",
+    message: "Too many authentication attempts. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
@@ -45,6 +84,35 @@ app.get("/", (req, res) => {
   res.send("Movies API is running...");
 });
 
+// Middleware to limit the maximum value of the limit parameter
+app.use((req, res, next) => {
+  if (req.query.limit) {
+    const limit = parseInt(req.query.limit);
+    if (limit > 100) {
+      return res.status(400).json({
+        error: "Invalid limit parameter",
+        message: "The maximum allowed limit is 100 items per request",
+        maxLimit: 100,
+      });
+    }
+  }
+  next();
+});
+
+// Apply Rate Limiting to all API routes
+app.use("/api/", generalLimiter);
+
+// Apply strict Rate Limiting to sensitive endpoints
+app.use("/api/movies", strictLimiter);
+app.use("/api/movies-only", strictLimiter);
+app.use("/api/tvshows", strictLimiter);
+app.use("/api/tvshows-only", strictLimiter);
+app.use("/api/filters", strictLimiter);
+
+// Apply Rate Limiting to Authentication
+app.use("/api/auth", authLimiter);
+
+// Routes
 app.use("/api/auth", authRoutes);
 
 app.use("/api/user", userRoutes);
