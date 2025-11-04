@@ -70,7 +70,7 @@ const generalLimiter = rateLimit({
 
 const strictLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // 10 requests per IP
+  max: 100, // 100 requests per IP
   message: {
     error: "Too many requests, please slow down.",
     message: "Too many requests. Please reduce the frequency of your requests.",
