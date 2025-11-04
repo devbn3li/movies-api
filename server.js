@@ -1,8 +1,14 @@
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const authRoutes = require("./routes/auth");
 const express = require("express");
+const morgan = require("morgan");
+const fs = require("fs");
+const path = require("path");
+const rateLimit = require("express-rate-limit");
+
+// Routes
+const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const movieRoutes = require("./routes/movies");
 const moviesOnlyRoutes = require("./routes/movies-only");
@@ -10,47 +16,61 @@ const tvShowsOnlyRoutes = require("./routes/tvshows-only");
 const tvShowsRoutes = require("./routes/tvshows");
 const favoriteRoutes = require("./routes/favorites");
 const reviewRoutes = require("./routes/reviews");
-const path = require("path");
 const uploadRoutes = require("./routes/upload");
 const adminRoutes = require("./routes/admin");
 const filtersRoutes = require("./routes/filters");
 const followRoutes = require("./routes/follow");
-const morgan = require("morgan");
-const fs = require("fs");
-const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 
+// Ensure directories exist
 const publicDir = path.join(__dirname, "public");
 const uploadsDir = path.join(publicDir, "uploads");
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
-  console.log("Created public directory");
+  console.log("✅ Created public directory");
 }
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log("Created public/uploads directory");
+  console.log("✅ Created public/uploads directory");
 }
 
 const app = express();
 
-// Rate Limiting - Protection against DoS attacks
+// ✅ Trust proxy (needed for Nginx real IP forwarding)
+app.set("trust proxy", true);
+
+// Middleware setup
+app.use(cors());
+app.use(morgan("dev"));
+app.use(express.json());
+
+// Database connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Error:", err));
+
+// Root route
+app.get("/", (req, res) => {
+  res.send("🎬 Movies API is running...");
+});
+
+// 🔒 Rate Limiters
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Maximum 100 requests per IP
+  max: 100, // 100 requests per IP
   message: {
     error: "Too many requests from this IP, please try again later.",
-    message:
-      "You have exceeded the maximum number of requests. Please try again later.",
+    message: "You have exceeded the maximum number of requests. Please try again later.",
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Strict rate limiter for endpoints that fetch large amounts of data
 const strictLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 20, // Maximum 20 requests per IP
+  max: 20, // 20 requests per IP
   message: {
     error: "Too many requests, please slow down.",
     message: "Too many requests. Please reduce the frequency of your requests.",
@@ -59,10 +79,9 @@ const strictLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiter for Authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Maximum 10 attempts
+  max: 10, // 10 login attempts
   message: {
     error: "Too many authentication attempts, please try again later.",
     message: "Too many authentication attempts. Please try again later.",
@@ -71,20 +90,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use(cors());
-app.use(morgan("dev"));
-app.use(express.json());
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.error(err));
-
-app.get("/", (req, res) => {
-  res.send("Movies API is running...");
-});
-
-// Middleware to limit the maximum value of the limit parameter
+// 🚦 Limit large 'limit' query parameter
 app.use((req, res, next) => {
   if (req.query.limit) {
     const limit = parseInt(req.query.limit);
@@ -99,51 +105,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply Rate Limiting to all API routes
+// Apply global and route-specific rate limits
 app.use("/api/", generalLimiter);
-
-// Apply strict Rate Limiting to sensitive endpoints
 app.use("/api/movies", strictLimiter);
 app.use("/api/movies-only", strictLimiter);
 app.use("/api/tvshows", strictLimiter);
 app.use("/api/tvshows-only", strictLimiter);
 app.use("/api/filters", strictLimiter);
-
-// Apply Rate Limiting to Authentication
 app.use("/api/auth", authLimiter);
 
-// Routes
+// API Routes
 app.use("/api/auth", authRoutes);
-
 app.use("/api/user", userRoutes);
-
 app.use("/api/movies", movieRoutes);
-
 app.use("/api/movies-only", moviesOnlyRoutes);
-
 app.use("/api/tvshows-only", tvShowsOnlyRoutes);
-
 app.use("/api/tvshows", tvShowsRoutes);
-
 app.use("/api/favorites", favoriteRoutes);
-
 app.use("/api/reviews", reviewRoutes);
-
 app.use("/api/upload", uploadRoutes);
-
-app.use(express.static(path.join(__dirname, "public")));
-
 app.use("/api/admin", adminRoutes);
-
 app.use("/api/filters", filtersRoutes);
-
 app.use("/api/follow", followRoutes);
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+// Static files
+app.use(express.static(path.join(__dirname, "public")));
 
-  // Handle Mongoose CastError (Invalid ObjectId)
+// 🌍 Global error handler
+app.use((err, req, res, next) => {
+  console.error("❌ Error:", err.stack);
+
   if (err.name === "CastError") {
     return res.status(400).json({
       message: "Invalid ID format",
@@ -153,7 +144,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Handle Mongoose ValidationError
   if (err.name === "ValidationError") {
     const errors = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({
@@ -163,7 +153,6 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Default error response
   res.status(500).json({
     message: "Internal Server Error",
     error:
@@ -173,5 +162,6 @@ app.use((err, req, res, next) => {
   });
 });
 
+// 🚀 Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
