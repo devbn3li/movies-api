@@ -51,37 +51,77 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json());
 
-// Database connection with better options for Vercel
-let isConnected = false;
+// Database connection optimized for Vercel Serverless
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 const connectDB = async () => {
-  if (isConnected) {
-    console.log("✅ Using existing MongoDB connection");
-    return;
+  if (cached.conn) {
+    return cached.conn;
   }
-  
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
+      family: 4,
+    };
+
+    cached.promise = mongoose.connect(process.env.MONGO_URI, opts).then((mongoose) => {
+      console.log("✅ MongoDB Connected");
+      return mongoose;
     });
-    isConnected = true;
-    console.log("✅ MongoDB Connected:", conn.connection.host);
-  } catch (err) {
-    console.error("❌ MongoDB Error:", err.message);
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    console.error("❌ MongoDB Error:", e.message);
+    throw e;
+  }
+
+  return cached.conn;
 };
 
-connectDB();
+// Middleware to ensure DB connection before each request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({ message: "Database connection failed", error: error.message });
+  }
+});
 
 // Root route
 app.get("/", (req, res) => {
   res.send("🎬 Movies API is running...");
 });
 
-//  Removed limit restriction for Vercel deployment
-app.use((req, res, next) => {
-  next();
+// Health check endpoint
+app.get("/api/health", async (req, res) => {
+  try {
+    const dbState = mongoose.connection.readyState;
+    const states = {
+      0: "disconnected",
+      1: "connected",
+      2: "connecting",
+      3: "disconnecting",
+    };
+    res.json({
+      status: "ok",
+      database: states[dbState] || "unknown",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
 });
 
 // API Routes (no rate limiting for Vercel)
