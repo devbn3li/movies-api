@@ -51,11 +51,28 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json());
 
-// Database connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Error:", err));
+// Database connection with better options for Vercel
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected) {
+    console.log("✅ Using existing MongoDB connection");
+    return;
+  }
+  
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    isConnected = true;
+    console.log("✅ MongoDB Connected:", conn.connection.host);
+  } catch (err) {
+    console.error("❌ MongoDB Error:", err.message);
+  }
+};
+
+connectDB();
 
 // Root route
 app.get("/", (req, res) => {
