@@ -5,7 +5,6 @@ const express = require("express");
 const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
-const rateLimit = require("express-rate-limit");
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -41,7 +40,12 @@ const app = express();
 app.set("trust proxy", true);
 
 // Middleware setup
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}));
 app.use(morgan("dev"));
 app.use(express.json());
 
@@ -56,65 +60,12 @@ app.get("/", (req, res) => {
   res.send("🎬 Movies API is running...");
 });
 
-// 🔒 Rate Limiters
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per IP
-  message: {
-    error: "Too many requests from this IP, please try again later.",
-    message: "You have exceeded the maximum number of requests. Please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const strictLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 100, // 100 requests per IP
-  message: {
-    error: "Too many requests, please slow down.",
-    message: "Too many requests. Please reduce the frequency of your requests.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 login attempts
-  message: {
-    error: "Too many authentication attempts, please try again later.",
-    message: "Too many authentication attempts. Please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// 🚦 Limit large 'limit' query parameter
+//  Removed limit restriction for Vercel deployment
 app.use((req, res, next) => {
-  if (req.query.limit) {
-    const limit = parseInt(req.query.limit);
-    if (limit > 100) {
-      return res.status(400).json({
-        error: "Invalid limit parameter",
-        message: "The maximum allowed limit is 100 items per request",
-        maxLimit: 100,
-      });
-    }
-  }
   next();
 });
 
-// Apply global and route-specific rate limits
-app.use("/api/", generalLimiter);
-app.use("/api/movies", strictLimiter);
-app.use("/api/movies-only", strictLimiter);
-app.use("/api/tvshows", strictLimiter);
-app.use("/api/tvshows-only", strictLimiter);
-app.use("/api/filters", strictLimiter);
-app.use("/api/auth", authLimiter);
-
-// API Routes
+// API Routes (no rate limiting for Vercel)
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/movies", movieRoutes);
