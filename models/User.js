@@ -38,6 +38,16 @@ const userSchema = new mongoose.Schema(
     passwordResetExpires: {
       type: Date,
     },
+    emailVerificationToken: {
+      type: String,
+    },
+    accountDeletionDate: {
+      type: Date,
+    },
+    verificationReminderSent: {
+      type: Boolean,
+      default: false,
+    },
     country: { type: String },
     password: {
       type: String,
@@ -88,7 +98,7 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("User", userSchema);

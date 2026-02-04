@@ -137,6 +137,9 @@ const verifyEmail = async (req, res) => {
     user.isEmailVerified = true;
     user.emailVerificationCode = undefined;
     user.emailVerificationExpires = undefined;
+    user.emailVerificationToken = undefined;
+    user.accountDeletionDate = undefined;
+    user.verificationReminderSent = false;
     await user.save();
 
     const { password: _, ...userWithoutPassword } = user.toObject();
@@ -146,6 +149,46 @@ const verifyEmail = async (req, res) => {
       token: generateToken(user._id),
       user: userWithoutPassword,
     });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+// Verify email by link (for old unverified users)
+const verifyEmailByLink = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res
+        .status(400)
+        .json({ message: "Verification token is required" });
+    }
+
+    const user = await User.findOne({ emailVerificationToken: token });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Invalid or expired verification link" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    // Verify email
+    user.isEmailVerified = true;
+    user.emailVerificationCode = undefined;
+    user.emailVerificationExpires = undefined;
+    user.emailVerificationToken = undefined;
+    user.accountDeletionDate = undefined;
+    user.verificationReminderSent = false;
+    await user.save();
+
+    // Redirect to frontend success page
+    const frontendUrl =
+      process.env.FRONTEND_URL || "https://moviezone-inky.vercel.app";
+    res.redirect(`${frontendUrl}/email-verified?success=true`);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -341,6 +384,7 @@ module.exports = {
   registerUser,
   loginUser,
   verifyEmail,
+  verifyEmailByLink,
   resendVerificationCode,
   forgotPassword,
   verifyResetCode,

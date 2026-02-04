@@ -6,6 +6,164 @@ const Review = require("../models/Review");
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
 const admin = require("../middleware/adminMiddleware");
+const {
+  generateVerificationToken,
+  sendVerificationReminderEmail,
+} = require("../utils/emailService");
+
+// Send verification reminder emails to unverified users (admin only)
+router.post(
+  "/send-verification-reminders",
+  protect,
+  admin,
+  async (req, res) => {
+    try {
+      // Find all unverified users who haven't received a reminder yet
+      const unverifiedUsers = await User.find({
+        isEmailVerified: false,
+        verificationReminderSent: { $ne: true },
+      });
+
+      if (unverifiedUsers.length === 0) {
+        return res.json({
+          message: "No unverified users to send reminders to",
+          sent: 0,
+        });
+      }
+
+      const deletionDate = new Date();
+      deletionDate.setMonth(deletionDate.getMonth() + 1); // 1 month from now
+
+      let sent = 0;
+      let failed = 0;
+      const results = [];
+
+      for (const user of unverifiedUsers) {
+        try {
+          // Generate verification token
+          const verificationToken = generateVerificationToken();
+
+          // Update user with token and deletion date
+          user.emailVerificationToken = verificationToken;
+          user.accountDeletionDate = deletionDate;
+          user.verificationReminderSent = true;
+          await user.save();
+
+          // Send email
+          const emailSent = await sendVerificationReminderEmail(
+            user.email,
+            user.name,
+            verificationToken,
+            deletionDate,
+          );
+
+          if (emailSent) {
+            sent++;
+            results.push({ email: user.email, status: "sent" });
+          } else {
+            failed++;
+            results.push({ email: user.email, status: "failed" });
+          }
+        } catch (error) {
+          failed++;
+          results.push({
+            email: user.email,
+            status: "error",
+            error: error.message,
+          });
+        }
+      }
+
+      res.json({
+        message: `Verification reminders sent`,
+        totalUnverified: unverifiedUsers.length,
+        sent,
+        failed,
+        deletionDate,
+        results,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
+// Get unverified users list (admin only)
+router.get("/unverified-users", protect, admin, async (req, res) => {
+  try {
+    const unverifiedUsers = await User.find({ isEmailVerified: false })
+      .select(
+        "name email username createdAt verificationReminderSent accountDeletionDate",
+      )
+      .sort({ createdAt: -1 });
+
+    res.json({
+      totalUnverified: unverifiedUsers.length,
+      users: unverifiedUsers,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// Delete expired unverified accounts (admin only or cron job)
+router.delete("/cleanup-unverified", protect, admin, async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Find users whose deletion date has passed
+    const expiredUsers = await User.find({
+      isEmailVerified: false,
+      accountDeletionDate: { $lt: now },
+    });
+
+    if (expiredUsers.length === 0) {
+      return res.json({
+        message: "No expired accounts to delete",
+        deleted: 0,
+      });
+    }
+
+    const deletedUserIds = expiredUsers.map((user) => user._id);
+
+    // Delete reviews by these users
+    await Review.deleteMany({ user: { $in: deletedUserIds } });
+
+    // Remove from followers/following lists
+    await User.updateMany(
+      { following: { $in: deletedUserIds } },
+      {
+        $pull: { following: { $in: deletedUserIds } },
+        $inc: { followingCount: -1 },
+      },
+    );
+
+    await User.updateMany(
+      { followers: { $in: deletedUserIds } },
+      {
+        $pull: { followers: { $in: deletedUserIds } },
+        $inc: { followersCount: -1 },
+      },
+    );
+
+    // Delete the users
+    const result = await User.deleteMany({
+      isEmailVerified: false,
+      accountDeletionDate: { $lt: now },
+    });
+
+    res.json({
+      message: `Deleted ${result.deletedCount} expired unverified accounts`,
+      deleted: result.deletedCount,
+      deletedEmails: expiredUsers.map((u) => u.email),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 
 // Get all users (admin only)
 router.get("/users", protect, admin, async (req, res) => {
