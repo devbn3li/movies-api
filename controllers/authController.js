@@ -47,7 +47,7 @@ const registerUser = async (req, res) => {
     const emailSent = await sendVerificationEmail(
       email,
       name,
-      verificationCode
+      verificationCode,
     );
 
     if (!emailSent) {
@@ -181,7 +181,7 @@ const resendVerificationCode = async (req, res) => {
     const emailSent = await sendVerificationEmail(
       user.email,
       user.name,
-      verificationCode
+      verificationCode,
     );
 
     if (!emailSent) {
@@ -209,10 +209,7 @@ const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      // For security, don't reveal if email exists or not
-      return res.json({
-        message: "If an account with this email exists, a reset code has been sent.",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Generate reset code
@@ -227,7 +224,7 @@ const forgotPassword = async (req, res) => {
     const emailSent = await sendPasswordResetEmail(
       user.email,
       user.name,
-      resetCode
+      resetCode,
     );
 
     if (!emailSent) {
@@ -324,7 +321,8 @@ const resetPassword = async (req, res) => {
     await user.save();
 
     res.json({
-      message: "Password reset successfully. You can now login with your new password.",
+      message:
+        "Password reset successfully. You can now login with your new password.",
     });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -340,4 +338,3 @@ module.exports = {
   verifyResetCode,
   resetPassword,
 };
-
