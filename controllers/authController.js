@@ -5,6 +5,7 @@ const { generateUniqueUsername } = require("../utils/helpers");
 const {
   generateVerificationCode,
   sendVerificationEmail,
+  sendPasswordResetEmail,
 } = require("../utils/emailService");
 
 const generateToken = (userId) => {
@@ -197,9 +198,146 @@ const resendVerificationCode = async (req, res) => {
   }
 };
 
+// Forgot Password - Send reset code to email
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      // For security, don't reveal if email exists or not
+      return res.json({
+        message: "If an account with this email exists, a reset code has been sent.",
+      });
+    }
+
+    // Generate reset code
+    const resetCode = generateVerificationCode();
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    user.passwordResetCode = resetCode;
+    user.passwordResetExpires = resetExpires;
+    await user.save();
+
+    // Send reset code via email
+    const emailSent = await sendPasswordResetEmail(
+      user.email,
+      user.name,
+      resetCode
+    );
+
+    if (!emailSent) {
+      return res.status(500).json({
+        message: "Failed to send reset code. Please try again.",
+      });
+    }
+
+    res.json({
+      message: "Password reset code sent to your email",
+      email: user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+// Verify Reset Code
+const verifyResetCode = async (req, res) => {
+  try {
+    const { email, resetCode } = req.body;
+
+    if (!email || !resetCode) {
+      return res.status(400).json({
+        message: "Email and reset code are required",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if reset code has expired
+    if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      return res.status(400).json({
+        message: "Reset code has expired. Please request a new one",
+      });
+    }
+
+    // Check if reset code is correct
+    if (user.passwordResetCode !== resetCode) {
+      return res.status(400).json({ message: "Invalid reset code" });
+    }
+
+    res.json({
+      message: "Reset code verified successfully",
+      verified: true,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+// Reset Password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({
+        message: "Email, reset code, and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if reset code has expired
+    if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      return res.status(400).json({
+        message: "Reset code has expired. Please request a new one",
+      });
+    }
+
+    // Check if reset code is correct
+    if (user.passwordResetCode !== resetCode) {
+      return res.status(400).json({ message: "Invalid reset code" });
+    }
+
+    // Hash new password and update
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.passwordResetCode = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.json({
+      message: "Password reset successfully. You can now login with your new password.",
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   verifyEmail,
   resendVerificationCode,
+  forgotPassword,
+  verifyResetCode,
+  resetPassword,
 };
+
