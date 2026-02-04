@@ -158,7 +158,7 @@ const sendVerificationReminderEmail = async (
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "⚠️ Action Required: Verify Your Email - Moviezone",
+      subject: "[Action required] Verify Your Email",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
           <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
@@ -176,7 +176,7 @@ const sendVerificationReminderEmail = async (
             
             <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 20px 0;">
               <p style="color: #856404; font-size: 14px; margin: 0;">
-                <strong>⚠️ Important:</strong> If you don't verify your email by <strong>${formattedDate}</strong>, your account will be automatically deleted.
+                <strong>Important:</strong> If you don't verify your email by <strong>${formattedDate}</strong>, your account will be automatically deleted.
               </p>
             </div>
             
