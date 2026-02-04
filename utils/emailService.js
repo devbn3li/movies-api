@@ -148,7 +148,7 @@ const sendVerificationReminderEmail = async (
       process.env.BACKEND_URL || "https://movies-api-theta-weld.vercel.app";
     const frontendUrl =
       process.env.FRONTEND_URL || "https://moviezone-inky.vercel.app";
-    const verificationLink = `${backendUrl}/api/auth/verify-email-link?token=${verificationToken}`;
+    const verificationLink = `${frontendUrl}/verify-email-link?token=${verificationToken}`;
     const formattedDate = new Date(deletionDate).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",

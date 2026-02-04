@@ -11,7 +11,158 @@ const {
   sendVerificationReminderEmail,
 } = require("../utils/emailService");
 
-// Send verification reminder emails to unverified users (admin only)
+// Send verification reminder to a single user (admin only)
+router.post(
+  "/send-verification-reminder/:userId",
+  protect,
+  admin,
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.isEmailVerified) {
+        return res
+          .status(400)
+          .json({ message: "User email is already verified" });
+      }
+
+      const deletionDate = new Date();
+      deletionDate.setMonth(deletionDate.getMonth() + 1); // 1 month from now
+
+      // Generate verification token
+      const verificationToken = generateVerificationToken();
+
+      // Update user with token and deletion date
+      user.emailVerificationToken = verificationToken;
+      user.accountDeletionDate = deletionDate;
+      user.verificationReminderSent = true;
+      await user.save();
+
+      // Send email
+      const emailSent = await sendVerificationReminderEmail(
+        user.email,
+        user.name,
+        verificationToken,
+        deletionDate,
+      );
+
+      if (!emailSent) {
+        return res
+          .status(500)
+          .json({ message: "Failed to send verification email" });
+      }
+
+      res.json({
+        message: "Verification reminder sent successfully",
+        user: {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+        },
+        deletionDate,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
+// Send verification reminders to multiple users (bulk) (admin only)
+router.post(
+  "/send-verification-reminders-bulk",
+  protect,
+  admin,
+  async (req, res) => {
+    try {
+      const { userIds } = req.body;
+
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ message: "userIds array is required" });
+      }
+
+      // Find unverified users from the provided IDs
+      const users = await User.find({
+        _id: { $in: userIds },
+        isEmailVerified: false,
+      });
+
+      if (users.length === 0) {
+        return res.json({
+          message: "No unverified users found from the provided IDs",
+          sent: 0,
+        });
+      }
+
+      const deletionDate = new Date();
+      deletionDate.setMonth(deletionDate.getMonth() + 1); // 1 month from now
+
+      let sent = 0;
+      let failed = 0;
+      const results = [];
+
+      for (const user of users) {
+        try {
+          // Generate verification token
+          const verificationToken = generateVerificationToken();
+
+          // Update user with token and deletion date
+          user.emailVerificationToken = verificationToken;
+          user.accountDeletionDate = deletionDate;
+          user.verificationReminderSent = true;
+          await user.save();
+
+          // Send email
+          const emailSent = await sendVerificationReminderEmail(
+            user.email,
+            user.name,
+            verificationToken,
+            deletionDate,
+          );
+
+          if (emailSent) {
+            sent++;
+            results.push({ _id: user._id, email: user.email, status: "sent" });
+          } else {
+            failed++;
+            results.push({
+              _id: user._id,
+              email: user.email,
+              status: "failed",
+            });
+          }
+        } catch (error) {
+          failed++;
+          results.push({
+            _id: user._id,
+            email: user.email,
+            status: "error",
+            error: error.message,
+          });
+        }
+      }
+
+      res.json({
+        message: `Verification reminders sent`,
+        totalRequested: userIds.length,
+        totalUnverified: users.length,
+        sent,
+        failed,
+        deletionDate,
+        results,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
+// Send verification reminder emails to ALL unverified users (admin only)
 router.post(
   "/send-verification-reminders",
   protect,
