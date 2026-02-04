@@ -301,6 +301,14 @@ const resetPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check if new password is the same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        message: "New password cannot be the same as the old password",
+      });
+    }
+
     // Check if reset code has expired
     if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
       return res.status(400).json({
